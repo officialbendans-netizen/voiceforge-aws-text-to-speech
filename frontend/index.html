@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceForge — Text to Speech</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #13131a;
+            --surface2: #1c1c28;
+            --border: #2a2a3a;
+            --accent: #7c6af7;
+            --accent2: #a78bfa;
+            --accent-glow: rgba(124, 106, 247, 0.15);
+            --text: #f0f0f5;
+            --text-muted: #8888aa;
+            --success: #34d399;
+            --error: #f87171;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px 60px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 600px;
+            background: radial-gradient(ellipse, rgba(124, 106, 247, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 760px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 52px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text);
+        }
+
+        .logo-text span { color: var(--accent2); }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(32px, 5vw, 52px);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        h1 em {
+            font-style: normal;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.6;
+            max-width: 440px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            margin-bottom: 20px;
+        }
+
+        .voice-section { margin-bottom: 28px; }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .voice-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .voice-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .voice-btn:hover {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .voice-btn.active {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+
+        .voice-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .voice-meta { font-size: 11px; color: var(--text-muted); }
+
+        .textarea-section { margin-bottom: 24px; }
+
+        .textarea-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .char-count { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        .char-count.warning { color: #fbbf24; }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            line-height: 1.7;
+            resize: vertical;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        textarea::placeholder { color: var(--text-muted); }
+        textarea:focus { border-color: var(--accent); }
+
+        .convert-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px rgba(124, 106, 247, 0.35);
+        }
+
+        .convert-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .status {
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 16px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status.error {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            color: var(--error);
+            display: flex;
+        }
+
+        .status.loading {
+            background: rgba(124, 106, 247, 0.1);
+            border: 1px solid rgba(124, 106, 247, 0.3);
+            color: var(--accent2);
+            display: flex;
+        }
+
+        .audio-card {
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            border-radius: 20px;
+            padding: 28px 36px;
+            display: none;
+            box-shadow: 0 0 40px rgba(124, 106, 247, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .audio-card.visible {
+            display: block;
+            animation: fadeUp 0.4s ease;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .audio-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .success-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .audio-card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .waveform {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 48px;
+            margin-bottom: 24px;
+        }
+
+        .wave-bar {
+            width: 3px;
+            background: linear-gradient(to top, var(--accent), var(--accent2));
+            border-radius: 3px;
+            animation: wave 1.2s ease-in-out infinite;
+        }
+
+        .wave-bar:nth-child(1)  { height: 16px; animation-delay: 0.0s; }
+        .wave-bar:nth-child(2)  { height: 28px; animation-delay: 0.1s; }
+        .wave-bar:nth-child(3)  { height: 40px; animation-delay: 0.2s; }
+        .wave-bar:nth-child(4)  { height: 32px; animation-delay: 0.3s; }
+        .wave-bar:nth-child(5)  { height: 20px; animation-delay: 0.4s; }
+        .wave-bar:nth-child(6)  { height: 44px; animation-delay: 0.5s; }
+        .wave-bar:nth-child(7)  { height: 36px; animation-delay: 0.6s; }
+        .wave-bar:nth-child(8)  { height: 24px; animation-delay: 0.7s; }
+        .wave-bar:nth-child(9)  { height: 40px; animation-delay: 0.8s; }
+        .wave-bar:nth-child(10) { height: 28px; animation-delay: 0.9s; }
+        .wave-bar:nth-child(11) { height: 16px; animation-delay: 1.0s; }
+        .wave-bar:nth-child(12) { height: 36px; animation-delay: 1.1s; }
+
+        @keyframes wave {
+            0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+            50%       { transform: scaleY(1);   opacity: 1;   }
+        }
+
+        audio {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            accent-color: var(--accent);
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 13px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .download-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent2);
+            background: var(--accent-glow);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent2);
+            margin-bottom: 4px;
+        }
+
+        .stat-label { font-size: 12px; color: var(--text-muted); }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .footer span { color: var(--accent2); }
+
+        .aws-badges {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        @media (max-width: 600px) {
+            .card { padding: 24px 20px; }
+            .voice-grid { grid-template-columns: repeat(2, 1fr); }
+            h1 { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🎙️</div>
+            <div class="logo-text">Voice<span>Forge</span></div>
+        </div>
+        <h1>Turn words into <em>voice</em></h1>
+        <p class="subtitle">Serverless text-to-speech powered by Amazon Polly and AWS Lambda. Type anything and hear it spoken instantly.</p>
+    </div>
+
+    <div class="card">
+
+        <div class="voice-section">
+            <div class="section-label">Choose a voice</div>
+            <div class="voice-grid">
+                <button class="voice-btn active" data-voice="Joanna" onclick="selectVoice(this)">
+                    <span class="voice-name">Joanna</span>
+                    <span class="voice-meta">Female · US</span>
+                </button>
+                <button class="voice-btn" data-voice="Matthew" onclick="selectVoice(this)">
+                    <span class="voice-name">Matthew</span>
+                    <span class="voice-meta">Male · US</span>
+                </button>
+                <button class="voice-btn" data-voice="Amy" onclick="selectVoice(this)">
+                    <span class="voice-name">Amy</span>
+                    <span class="voice-meta">Female · UK</span>
+                </button>
+                <button class="voice-btn" data-voice="Brian" onclick="selectVoice(this)">
+                    <span class="voice-name">Brian</span>
+                    <span class="voice-meta">Male · UK</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="textarea-section">
+            <div class="textarea-header">
+                <div class="section-label">Your text</div>
+                <div class="char-count" id="charCount">0 / 3000</div>
+            </div>
+            <textarea
+                id="textInput"
+                placeholder="Type or paste your text here... Try: Hello! I am Benjamin Asare Danquah, an AWS Certified Cloud Practitioner from Ghana."
+                maxlength="3000"
+                oninput="updateCharCount()"
+            ></textarea>
+        </div>
+
+        <button class="convert-btn" id="convertBtn" onclick="convertToSpeech()">
+            <div class="spinner" id="spinner"></div>
+            <span id="btnText">🎙️ Convert to Speech</span>
+        </button>
+
+        <div class="status" id="statusMsg"></div>
+
+    </div>
+
+    <div class="audio-card" id="audioCard">
+        <div class="audio-card-header">
+            <div class="success-dot"></div>
+            <div class="audio-card-title">Your audio is ready</div>
+        </div>
+        <div class="waveform">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+        </div>
+        <audio id="audioPlayer" controls></audio>
+        <a class="download-btn" id="downloadBtn" href="#" download>
+            ⬇️ Download MP3
+        </a>
+    </div>
+
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-value" id="conversionCount">0</div>
+            <div class="stat-label">Conversions</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">Neural</div>
+            <div class="stat-label">Voice Engine</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">AWS</div>
+            <div class="stat-label">Powered by</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Built with <span>♥</span> by Benjamin Asare Danquah · AWS Certified Cloud Practitioner
+        <div class="aws-badges">
+            <span class="badge">Amazon S3</span>
+            <span class="badge">AWS Lambda</span>
+            <span class="badge">Amazon Polly</span>
+            <span class="badge">API Gateway</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const API_URL = 'https://92nc1e8pr9.execute-api.us-east-1.amazonaws.com/prod/convert';
+
+    let selectedVoice = 'Joanna';
+    let conversionCount = 0;
+
+    function selectVoice(btn) {
+        document.querySelectorAll('.voice-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedVoice = btn.dataset.voice;
+    }
+
+    function updateCharCount() {
+        const text = document.getElementById('textInput').value;
+        const count = text.length;
+        const el = document.getElementById('charCount');
+        el.textContent = count + ' / 3000';
+        el.className = count > 2500 ? 'char-count warning' : 'char-count';
+    }
+
+    function showStatus(message, type) {
+        const el = document.getElementById('statusMsg');
+        el.textContent = message;
+        el.className = 'status ' + type;
+    }
+
+    function hideStatus() {
+        document.getElementById('statusMsg').className = 'status';
+    }
+
+    function setLoading(loading) {
+        const btn = document.getElementById('convertBtn');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.getElementById('btnText');
+        if (loading) {
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            btnText.textContent = 'Converting...';
+            showStatus('Sending to Amazon Polly... please wait', 'loading');
+        } else {
+            btn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = 'Convert to Speech';
+            hideStatus();
+        }
+    }
+
+    async function convertToSpeech() {
+        const text = document.getElementById('textInput').value.trim();
+
+        if (!text) {
+            showStatus('Please enter some text first', 'error');
+            return;
+        }
+
+        if (text.length < 3) {
+            showStatus('Please enter at least 3 characters', 'error');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text, voice: selectedVoice })
+            });
+
+            // Read raw response text first
+            const rawText = await response.text();
+            console.log('Raw API response:', rawText);
+
+            // Parse outer JSON
+            let outer;
+            try {
+                outer = JSON.parse(rawText);
+            } catch(e) {
+                throw new Error('Invalid response from server');
+            }
+
+            // Parse inner body if it is a string
+            let data;
+            if (outer.body && typeof outer.body === 'string') {
+                try {
+                    data = JSON.parse(outer.body);
+                } catch(e) {
+                    data = outer;
+                }
+            } else if (outer.body && typeof outer.body === 'object') {
+                data = outer.body;
+            } else if (outer.audioUrl) {
+                data = outer;
+            } else {
+                data = outer;
+            }
+
+            console.log('Parsed data:', data);
+
+            if (data && data.audioUrl) {
+                const audioPlayer = document.getElementById('audioPlayer');
+                const downloadBtn = document.getElementById('downloadBtn');
+                const audioCard = document.getElementById('audioCard');
+
+                audioPlayer.src = data.audioUrl;
+                downloadBtn.href = data.audioUrl;
+                audioCard.classList.add('visible');
+
+                audioPlayer.play().catch(function() {});
+
+                conversionCount++;
+                document.getElementById('conversionCount').textContent = conversionCount;
+
+                setLoading(false);
+                audioCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } else if (data && data.error) {
+                throw new Error(data.error);
+            } else {
+                console.log('Full response:', outer);
+                throw new Error('No audio URL in response. Check console for details.');
+            }
+
+        } catch (error) {
+            setLoading(false);
+            showStatus('Error: ' + error.message, 'error');
+            console.error('Full error:', error);
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            convertToSpeech();
+        }
+    });
+</script>
+
+</body>
+</html>
