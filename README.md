@@ -332,4 +332,4 @@ MIT License — feel free to use, modify and share.
 
 ---
 
-*This is Project 1 of my AWS Cloud Portfolio — building real serverless applications while preparing for the AWS Solutions Architect Associate certification.*
+*This is Project 2 of my AWS Cloud Portfolio — building real serverless applications while preparing for the AWS Solutions Architect Associate certification.*
