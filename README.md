@@ -319,7 +319,7 @@ Your app is now live at the S3 website endpoint URL! 🎉
 ## 👨‍💻 Author
 
 **Benjamin Asare Danquah**
-- 🏆 AWS Certified Cloud Practitioner — Score: 890/1000
+- 🏆 AWS Certified Cloud Practitioner
 - 🌍 Based in Ghana, West Africa
 - 💼 GitHub: [@officialbendans-netizen](https://github.com/officialbendans-netizen)
 - ☁️ Preparing for AWS Solutions Architect Associate
